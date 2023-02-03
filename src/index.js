@@ -1,4 +1,8 @@
 
+
+
+
+
 // firebase code =========================
 
 import { initializeApp } from 'firebase/app'
@@ -27,39 +31,38 @@ initializeApp(firebaseConfig)
 // init services 
 const db = getFirestore()
 const auth = getAuth()
+const colRef = collection(db, `texts`)
 
-// collection ref
-// const colRef = collection(db, 'texts')
+// checktest==================
+// document.querySelector('.checktest').addEventListener('click', testFunc)
+async function testFunc() {
+	const subColRef = collection(db,'suka', 'lEqoJVQoRYqqio4SUPjm', `${userPersonalCollection}`)
+	getDocs(subColRef)
+	.then((snapshot)=>{
+		let array = []
+		snapshot.docs.forEach((doc) => {
+			array.push({...doc.data(), id: doc.id})
+		})
+		console.log(array)
+		if(array.length > 0) {
+			console.log('yes')
+			// showTexts()
+		}
+		else {
+			addDoc(subColRef, {
+				user: `${userPersonalCollection}`,
+				createdAt: serverTimestamp()
+			})
+		}
+	})
+	
+	}
 
-
-
-const provider = new GoogleAuthProvider()
-
+// ============
 let userPersonalCollection = ''
-const colRef = collection(db, `${userPersonalCollection}`)
-
+let i = 1
 document.querySelector('.popups__button1').addEventListener('click', (e)=>{
-	// signInWithRedirect(auth, provider);
-// 	getRedirectResult(auth)
-//   .then((result) => {
-//     // This gives you a Google Access Token. You can use it to access Google APIs.
-//     const credential = GoogleAuthProvider.credentialFromResult(result);
-//     const token = credential.accessToken;
-
-//     // The signed-in user info.
-//     const user = result.user;
-//   }).catch((error) => {
-//     // Handle Errors here.
-//     const errorCode = error.code;
-//     const errorMessage = error.message;
-//     // The email of the user's account used.
-//     const email = error.customData.email;
-//     // The AuthCredential type that was used.
-//     const credential = GoogleAuthProvider.credentialFromError(error);
-//     // ...
-//   });
-
-
+	
 signInWithPopup(auth, provider)
   .then((result) => {
     // This gives you a Google Access Token. You can use it to access the Google API.
@@ -69,9 +72,16 @@ signInWithPopup(auth, provider)
     const user = result.user;
 
 	 alert(user.displayName)
-	 userPersonalCollection = user.displayName
+	 userPersonalCollection = user.email
+	 console.log(userPersonalCollection)
+	 testFunc()
     // ...
-  }).catch((error) => {
+  })
+//   .then( ()=> {
+// 	const docRef = doc(db, 'suka', `${userPersonalCollection}`)
+// 	const docSnap = await getDoc(docRef)
+// 	})
+  .catch((error) => {
     // Handle Errors here.
     const errorCode = error.code;
     const errorMessage = error.message;
@@ -83,14 +93,26 @@ signInWithPopup(auth, provider)
 	 alert(errorMessage)
   });
 
+
 })
+
+
+
+
+// ==================================
+
+
+
+const provider = new GoogleAuthProvider()
+
+
 
 
 
 
 const textField = document.querySelector('.checked__texts')
 let cur 
-
+// ----------------
 onSnapshot(colRef, (snapshot)=>{
 	let texts = []
 	snapshot.docs.forEach((doc)=>{
@@ -112,6 +134,14 @@ onSnapshot(colRef, (snapshot)=>{
 		 <br\>`
 	})
 })
+// ----------------
+
+
+
+
+
+
+// 
 
 // add to collection
 
@@ -135,14 +165,6 @@ else {
 
 
 // =======================auth
-
-
-
-
-
-
-
-
 
 
 // app code================================ 
