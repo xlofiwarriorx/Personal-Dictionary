@@ -33,6 +33,8 @@ const db = getFirestore()
 const auth = getAuth()
 const colRef = collection(db, `texts`)
 
+
+
 // checktest==================
 // document.querySelector('.checktest').addEventListener('click', testFunc)
 async function testFunc() {
@@ -61,6 +63,7 @@ async function testFunc() {
 // ============
 let userPersonalCollection = ''
 let i = 1
+
 document.querySelector('.popups__button1').addEventListener('click', (e)=>{
 	
 signInWithPopup(auth, provider)
@@ -74,13 +77,8 @@ signInWithPopup(auth, provider)
 	 alert(user.displayName)
 	 userPersonalCollection = user.email
 	 console.log(userPersonalCollection)
-	 testFunc()
-    // ...
   })
-//   .then( ()=> {
-// 	const docRef = doc(db, 'suka', `${userPersonalCollection}`)
-// 	const docSnap = await getDoc(docRef)
-// 	})
+  .then(()=>{testFunc()})
   .catch((error) => {
     // Handle Errors here.
     const errorCode = error.code;
@@ -113,7 +111,12 @@ const provider = new GoogleAuthProvider()
 const textField = document.querySelector('.checked__texts')
 let cur 
 // ----------------
-onSnapshot(colRef, (snapshot)=>{
+// const subColRef = collection(db,'suka', 'lEqoJVQoRYqqio4SUPjm', `${userPersonalCollection}`)
+const file = doc(db, "suka", 'lEqoJVQoRYqqio4SUPjm')
+const col = collection(file, `${userPersonalCollection}`)
+
+function appearTexts (){
+onSnapshot(col, (snapshot)=>{
 	let texts = []
 	snapshot.docs.forEach((doc)=>{
 		texts.push({
@@ -134,6 +137,7 @@ onSnapshot(colRef, (snapshot)=>{
 		 <br\>`
 	})
 })
+}
 // ----------------
 
 
@@ -141,21 +145,19 @@ onSnapshot(colRef, (snapshot)=>{
 
 
 
-// 
-
 // add to collection
 
 
 const addToCol = ()=>{
 	if (textMemory !== '') {
-	addDoc(colRef, {
+	addDoc(col, {
 		text: textMemory,
 		createdAt: serverTimestamp()
 	})
-	textMemory=''
+	textMemory = ''
 }
 else {
-	addDoc(colRef, {
+	addDoc(col, {
 		text: textTyped.innerHTML,
 		createdAt: serverTimestamp()
 	})
@@ -250,7 +252,23 @@ let languageOnWork
 		console.log(textMemory)
 	})
 
-	saveText.addEventListener('click', addToCol)
+	saveText.addEventListener('click', ()=> {
+		if (userPersonalCollection == '') {
+			nonAuthTexts()
+		}
+		else {
+		
+			addToCol()
+		appearTexts()
+		}
+		
+	})
+
+	function nonAuthTexts() {
+		textField.innerHTML = ''
+		textField.innerHTML = textTyped.textContent
+		textTyped.textContent = ''
+	}
 
 	textTyped.addEventListener('click', singleOut )
 
