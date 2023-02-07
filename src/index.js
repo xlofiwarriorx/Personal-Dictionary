@@ -7,11 +7,12 @@
 
 import { initializeApp } from 'firebase/app'
 import {
-	 getFirestore, collection, getDocs, onSnapshot, addDoc, deleteDoc, doc, query, where, orderBy, serverTimestamp, getDoc, updateDoc, 
+	 getFirestore, collection, getDocs, onSnapshot, addDoc, deleteDoc, doc, query, where, orderBy, serverTimestamp, getDoc, updateDoc
 } from 'firebase/firestore'
 
 import {
-	getRedirectResult , signInWithRedirect, signInWithPopup, GoogleAuthProvider, getAuth, createUserWithEmailAndPassword, signOut, signInWithEmailAndPassword, onAuthStateChanged
+	 signInWithPopup, GoogleAuthProvider, getAuth, onAuthStateChanged,
+	setPersistence, inMemoryPersistence, browserLocalPersistence, signOut
 } from 'firebase/auth'
 
 const firebaseConfig = {
@@ -31,38 +32,85 @@ initializeApp(firebaseConfig)
 // init services 
 const db = getFirestore()
 const auth = getAuth()
-const colRef = collection(db, `texts`)
+const colRef = collection(db, `suka`)
 
+// =============================
+
+// setPersistence(auth, browserLocalPersistence)
+// =============================
 
 
 // checktest==================
 // document.querySelector('.checktest').addEventListener('click', testFunc)
-async function testFunc() {
-	const subColRef = collection(db,'suka', 'lEqoJVQoRYqqio4SUPjm', `${userPersonalCollection}`)
-	getDocs(subColRef)
-	.then((snapshot)=>{
-		let array = []
-		snapshot.docs.forEach((doc) => {
-			array.push({...doc.data(), id: doc.id})
+// async function showUserDocs() {
+// 	const subColRef = collection(db,'suka', 'lEqoJVQoRYqqio4SUPjm', `${userPersonalCollection}`)
+// 	getDocs(subColRef)
+// 	.then((snapshot)=>{
+// 		let array = []
+// 		console.log('snapshot docs' + snapshot.docs)
+// 		snapshot.docs.forEach((doc) => {
+// 			array.push({...doc.data(), id: doc.id})
+// 		})
+// 		console.log(array)
+// 		if(array.length > 0) {
+// 			console.log('yes')
+// 			showTexts()
+// 		}
+// 		else {
+// 			addDoc(subColRef, {
+// 				user: `${userPersonalCollection}`,
+// 				createdAt: serverTimestamp()
+// 			})
+// 		}
+// 	})
+// 	}
+
+
+	async function showTexts() {
+		const file = doc(db, "suka", 'lEqoJVQoRYqqio4SUPjm')
+	const col = await collection(file, `${auth.currentUser.email}`)
+	// console.log('smari ' + auth.currentUser.email)
+onSnapshot(col, (snapshot)=>{
+	let texts = []
+	snapshot.docs.forEach((doc)=>{
+		texts.push({
+			...doc.data(), id: doc.id
 		})
-		console.log(array)
-		if(array.length > 0) {
-			console.log('yes')
-			// showTexts()
-		}
-		else {
-			addDoc(subColRef, {
-				user: `${userPersonalCollection}`,
-				createdAt: serverTimestamp()
-			})
-		}
 	})
-	
+	console.log(texts)
+	textField.innerHTML = ''
+	texts.forEach((elem)=>{
+		cur = textField.innerHTML 
+		textField.innerHTML = 
+		` 
+		 ${cur}
+		 <div class="text" data-num = "${elem.id}"> 
+		 <div class="text-child" >${elem.text}</div>
+		 <div class="text-words"></div>
+		 </div> 
+		 <br\>`
+	})
+})
 	}
 
 // ============
-let userPersonalCollection = ''
-let i = 1
+// let userPersonalCollection = ''
+// let i = 1
+const user = auth.currentUser;
+
+// function yes () {
+// if(user){
+// 	const email = user.email;
+// 	userPersonalCollection = `${email}`
+// 	showTexts()
+// 	console.log('email' + email)
+// }
+// else{
+// 	console.log('pizdez')
+// }
+// }
+// yes()
+
 
 document.querySelector('.popups__button1').addEventListener('click', (e)=>{
 	
@@ -75,10 +123,14 @@ signInWithPopup(auth, provider)
     const user = result.user;
 
 	 alert(user.displayName)
-	 userPersonalCollection = user.email
-	 console.log(userPersonalCollection)
+	//  userPersonalCollection = user.email
+	//  console.log(userPersonalCollection)
   })
-  .then(()=>{testFunc()})
+//   .then(()=> {return setPersistence(auth, browserLocalPersistence)})
+  .then(()=>{
+	showTexts()
+	// showUserDocs()
+})
   .catch((error) => {
     // Handle Errors here.
     const errorCode = error.code;
@@ -95,6 +147,17 @@ signInWithPopup(auth, provider)
 })
 
 
+document.querySelector('.popups__button').addEventListener('click', ()=>{
+	signOut(auth)
+.then(() => {
+	console.log('Sign-out successful.')
+	textField.innerHTML = ''
+ })
+ .catch((error) => {
+	// An error happened.
+ });
+}
+)
 
 
 // ==================================
@@ -103,19 +166,39 @@ signInWithPopup(auth, provider)
 
 const provider = new GoogleAuthProvider()
 
+// 	setPersistence(auth, browserLocalPersistence)
+//   .then(() => {
+// 	signInWithPopup(auth, provider)
+//   })
+//   .catch((error) => {
+//     // Handle Errors here.
+//     const errorCode = error.code;
+//     const errorMessage = error.message;
+//   });
 
 
 
+// ===================== moves personal data from server to screen
+  onAuthStateChanged(auth, user => {
+	if (user) {
+		// console.log('it works')
+		// showUserDocs()
+		showTexts()
+		// userPersonalCollection = user.email
+	}
+  });
+//   ============================================
 
 
 const textField = document.querySelector('.checked__texts')
 let cur 
 // ----------------
 // const subColRef = collection(db,'suka', 'lEqoJVQoRYqqio4SUPjm', `${userPersonalCollection}`)
-const file = doc(db, "suka", 'lEqoJVQoRYqqio4SUPjm')
-const col = collection(file, `${userPersonalCollection}`)
 
-function appearTexts (){
+
+async function appearTexts (){
+	const file = doc(db, "suka", 'lEqoJVQoRYqqio4SUPjm')
+	const col = await collection(file, `${userPersonalCollection}`)
 onSnapshot(col, (snapshot)=>{
 	let texts = []
 	snapshot.docs.forEach((doc)=>{
@@ -149,6 +232,8 @@ onSnapshot(col, (snapshot)=>{
 
 
 const addToCol = ()=>{
+	const file = doc(db, "suka", 'lEqoJVQoRYqqio4SUPjm')
+	const col = collection(file, `${userPersonalCollection}`)
 	if (textMemory !== '') {
 	addDoc(col, {
 		text: textMemory,
@@ -167,6 +252,12 @@ else {
 
 
 // =======================auth
+
+// onAuthStateChanged (auth, (user) => {
+// 	// showUserDocs()
+// 	// showTexts()
+// 	console.log('user status changed:', user)
+// })
 
 
 // app code================================ 
@@ -257,17 +348,40 @@ let languageOnWork
 			nonAuthTexts()
 		}
 		else {
-		
 			addToCol()
-		appearTexts()
+			appearTexts()
+			showTexts()
 		}
 		
 	})
 
+	let numberor 
+	let count = 0
 	function nonAuthTexts() {
-		textField.innerHTML = ''
-		textField.innerHTML = textTyped.textContent
+		// textField.innerHTML = ''
+		
+		let arr = []
+		arr.push(textTyped.textContent)
+		arr.forEach((elem)=>{
+			count = count+1
+			numberor = textField.innerHTML
+			textField.innerHTML = 
+			`
+			
+			<div class="text" data-num = "${count+1}"> 
+			<div class="text-child" >${textTyped.textContent}</div>
+			<div class="text-words"></div>
+			</div> 
+			${numberor}
+			<br\>
+			`
+		})
+	
+		// numberor = some
+		// textField.innerHTML = some
+		// numberor = textTyped.textContent
 		textTyped.textContent = ''
+		
 	}
 
 	textTyped.addEventListener('click', singleOut )
