@@ -40,30 +40,6 @@ const colRef = collection(db, `suka`)
 // =============================
 
 
-// checktest==================
-// document.querySelector('.checktest').addEventListener('click', testFunc)
-// async function showUserDocs() {
-// 	const subColRef = collection(db,'suka', 'lEqoJVQoRYqqio4SUPjm', `${userPersonalCollection}`)
-// 	getDocs(subColRef)
-// 	.then((snapshot)=>{
-// 		let array = []
-// 		console.log('snapshot docs' + snapshot.docs)
-// 		snapshot.docs.forEach((doc) => {
-// 			array.push({...doc.data(), id: doc.id})
-// 		})
-// 		console.log(array)
-// 		if(array.length > 0) {
-// 			console.log('yes')
-// 			showTexts()
-// 		}
-// 		else {
-// 			addDoc(subColRef, {
-// 				user: `${userPersonalCollection}`,
-// 				createdAt: serverTimestamp()
-// 			})
-// 		}
-// 	})
-// 	}
 
 
 	async function showTexts() {
@@ -80,17 +56,39 @@ onSnapshot(col, (snapshot)=>{
 	console.log(texts)
 	textField.innerHTML = ''
 	texts.forEach((elem)=>{
+		if(elem.pickedWords){
 		cur = textField.innerHTML 
 		textField.innerHTML = 
 		` 
 		 ${cur}
+		 
 		 <div class="text" data-num = "${elem.id}"> 
+		 <div class="closetext">x</div>
+		 <div class="text-child" >${elem.text}</div>
+		 <div class="text-words">${elem.pickedWords}</div>
+		 </div> 
+		 <br\>`
+		}
+
+		
+
+		else {
+			cur = textField.innerHTML 
+		textField.innerHTML = 
+		` 
+		 ${cur}
+		 <div class="text" data-num = "${elem.id}"> 
+		 <div class="closetext">x</div>
 		 <div class="text-child" >${elem.text}</div>
 		 <div class="text-words"></div>
 		 </div> 
 		 <br\>`
+		}
+		
 	})
 })
+	text.value = ''
+	
 	}
 
 // ============
@@ -98,18 +96,10 @@ onSnapshot(col, (snapshot)=>{
 // let i = 1
 const user = auth.currentUser;
 
-// function yes () {
-// if(user){
-// 	const email = user.email;
-// 	userPersonalCollection = `${email}`
-// 	showTexts()
-// 	console.log('email' + email)
+// function colorCleaner () {
+// 	const listWordsArray =textField.querySelectorAll('.word')
+// 		listWordsArray.forEach((elem)=> elem.classList.remove('picked-word'))
 // }
-// else{
-// 	console.log('pizdez')
-// }
-// }
-// yes()
 
 
 document.querySelector('.popups__button1').addEventListener('click', (e)=>{
@@ -166,16 +156,6 @@ document.querySelector('.popups__button').addEventListener('click', ()=>{
 
 const provider = new GoogleAuthProvider()
 
-// 	setPersistence(auth, browserLocalPersistence)
-//   .then(() => {
-// 	signInWithPopup(auth, provider)
-//   })
-//   .catch((error) => {
-//     // Handle Errors here.
-//     const errorCode = error.code;
-//     const errorMessage = error.message;
-//   });
-
 
 
 // ===================== moves personal data from server to screen
@@ -190,41 +170,9 @@ const provider = new GoogleAuthProvider()
 //   ============================================
 
 
-const textField = document.querySelector('.checked__texts')
+
 let cur 
-// ----------------
-// const subColRef = collection(db,'suka', 'lEqoJVQoRYqqio4SUPjm', `${userPersonalCollection}`)
-
-
-async function appearTexts (){
-	const file = doc(db, "suka", 'lEqoJVQoRYqqio4SUPjm')
-	const col = await collection(file, `${userPersonalCollection}`)
-onSnapshot(col, (snapshot)=>{
-	let texts = []
-	snapshot.docs.forEach((doc)=>{
-		texts.push({
-			...doc.data(), id: doc.id
-		})
-	})
-	console.log(texts)
-	textField.innerHTML = ''
-	texts.forEach((elem)=>{
-		cur = textField.innerHTML 
-		textField.innerHTML = 
-		` 
-		 ${cur}
-		 <div class="text" data-num = "${elem.id}"> 
-		 <div class="text-child" >${elem.text}</div>
-		 <div class="text-words"></div>
-		 </div> 
-		 <br\>`
-	})
-})
-}
-// ----------------
-
-
-
+// ---------------
 
 
 
@@ -232,32 +180,52 @@ onSnapshot(col, (snapshot)=>{
 
 
 const addToCol = ()=>{
+	resetOtherWordsinList ()
 	const file = doc(db, "suka", 'lEqoJVQoRYqqio4SUPjm')
-	const col = collection(file, `${userPersonalCollection}`)
+	const col = collection(file, `${auth.currentUser.email}`)
+	textMemory = text.value
 	if (textMemory !== '') {
-	addDoc(col, {
-		text: textMemory,
-		createdAt: serverTimestamp()
-	})
-	textMemory = ''
-}
-else {
-	addDoc(col, {
-		text: textTyped.innerHTML,
-		createdAt: serverTimestamp()
-	})
-	textMemory=''
-}
-}
+		if(popupText.textContent !== ''){
+			addDoc(col, {
+				text: textMemory,
+				createdAt: serverTimestamp(),
+				pickedWords: popupText.innerHTML
+			})
+			textMemory = ''
+		}
+		else {
+			addDoc(col, {
+				text: textMemory,
+				createdAt: serverTimestamp(),
+				pickedWords: ''
+			})
+			textMemory = ''
+		}
+	}
+	else {
+		if(popupText.textContent !== ''){
+			addDoc(col, {
+				text: textTyped.textContent,
+				createdAt: serverTimestamp(),
+				pickedWords: popupText.innerHTML
+			})
+			textMemory=''
+		}
+		else {
+			addDoc(col, {
+				text: textMemory,
+				createdAt: serverTimestamp(),
+				pickedWords: ''
+			})
+			textMemory = ''
+		}
+		
+	}
+	}
 
 
 // =======================auth
 
-// onAuthStateChanged (auth, (user) => {
-// 	// showUserDocs()
-// 	// showTexts()
-// 	console.log('user status changed:', user)
-// })
 
 
 // app code================================ 
@@ -272,7 +240,7 @@ else {
 	const targetLanguageWrapper = document.querySelector('.target-language__ul')
 	const translateButton = document.querySelector('.translate-button')
 	const saveText = document.querySelector('.savetext-button')
-
+	const textField = document.querySelector('.checked__texts')
 	let textMemory
 	let currentWord
 let firstLanguage = 'en'
@@ -333,7 +301,6 @@ let languageOnWork
 	)
 	
 
-
 	addTextButton.addEventListener('click', ()=> {
 		words = ''
 		textTyped.innerHTML = ''
@@ -344,37 +311,92 @@ let languageOnWork
 	})
 
 	saveText.addEventListener('click', ()=> {
-		if (userPersonalCollection == '') {
+		if (auth.currentUser == null) {
 			nonAuthTexts()
+			// text.value = ''
 		}
 		else {
 			addToCol()
-			appearTexts()
 			showTexts()
+			// text.value = ''
 		}
-		
+		text.value = ''
+		console.log("text value: "+ text.value)
+		textTyped.innerHTML = ''
+		popupText.innerHTML = ''
 	})
 
 	let numberor 
 	let count = 0
+
+	textField.addEventListener('click', (e)=>{
+		let target = e.target
+		let closeText = target.closest('.closetext')
+		const colRef = collection(db, 'suka', 'lEqoJVQoRYqqio4SUPjm' , `${auth.currentUser.email}`)
+		const docRef = doc(colRef, `${target.closest('.text').dataset.num}`)
+		if(target.classList.contains('closetext') ){
+			deleteDoc(docRef)
+			.then(()=>{
+				console.log('document deleted')
+			})
+		}
+	})
+
+
 	function nonAuthTexts() {
 		// textField.innerHTML = ''
-		
+		resetOtherWordsinList ()
 		let arr = []
-		arr.push(textTyped.textContent)
+		if (textTyped.textContent !== ''){
+			arr.push(textTyped.textContent)
+		}
+		else{
+			arr.push(text.value)
+		}
+		
 		arr.forEach((elem)=>{
 			count = count+1
 			numberor = textField.innerHTML
-			textField.innerHTML = 
-			`
+			if(textTyped.textContent !== '') {
+				if (popupText.textContent !== '') {
+					textField.innerHTML = 
+					`
+					<div class="text" data-num = "${count+1}"> 
+					<div class="closetext">x</div>
+					<div class="text-child" >${textTyped.textContent}</div>
+					<div class="text-words">${popupText.innerHTML}</div>
+					</div> 
+					${numberor}
+					<br\>
+					`
+				}
+				else {
+					textField.innerHTML = 
+					`
+					<div class="text" data-num = "${count+1}"> 
+					<div class="closetext">x</div>
+					<div class="text-child" >${textTyped.textContent}</div>
+					<div class="text-words"></div>
+					</div> 
+					${numberor}
+					<br\>
+					`
+				}
+			}
+			else if (text.value !== '') {
+				textField.innerHTML = 
+				`
+				<div class="text" data-num = "${count+1}"> 
+				<div class="closetext">x</div>
+				<div class="text-child" >${text.value}</div>
+				<div class="text-words"></div>
+				</div> 
+				${numberor}
+				<br\>
+				`
+			}
 			
-			<div class="text" data-num = "${count+1}"> 
-			<div class="text-child" >${textTyped.textContent}</div>
-			<div class="text-words"></div>
-			</div> 
-			${numberor}
-			<br\>
-			`
+			
 		})
 	
 		// numberor = some
@@ -393,10 +415,10 @@ makelistButton.addEventListener('click', () => {
 
 popupText.addEventListener('click', listSingleOut)
 
-function resetOtherLanguages () {
-	const listWordsArray = currentResource.querySelectorAll('.word')
-	listWordsArray.forEach((elem)=> elem.classList.remove('picked-word'))
-}
+// function resetOtherLanguages () {
+// 	const listWordsArray = currentResource.querySelectorAll('.word')
+// 	listWordsArray.forEach((elem)=> elem.classList.remove('picked-word'))
+// }
 
 
 function replaceText() {
@@ -430,7 +452,7 @@ function wrappingWords (array, textArea) {
 	}
 
 	function makeList() {
-		let content = document.querySelectorAll('.word')
+		let content = textTyped.querySelectorAll('.word')
 		content.forEach((elem)=>{
 			if (elem.classList.contains('colored')){
 				const i = pickedWordsList.length;
