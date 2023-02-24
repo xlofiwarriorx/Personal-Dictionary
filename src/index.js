@@ -7,7 +7,7 @@
 
 import { initializeApp } from 'firebase/app'
 import {
-	 getFirestore, collection, getDocs, onSnapshot, addDoc, deleteDoc, doc, query, where, orderBy, serverTimestamp, getDoc, updateDoc
+	 getFirestore, collection, getDocs, onSnapshot, addDoc, deleteDoc, doc, query, where, orderBy, serverTimestamp, getDoc, updateDoc, QueryLimitConstraint, setDoc, getString
 } from 'firebase/firestore'
 
 import {
@@ -40,20 +40,21 @@ const colRef = collection(db, `suka`)
 // =============================
 
 
-
-
 	async function showTexts() {
 		const file = doc(db, "suka", 'lEqoJVQoRYqqio4SUPjm')
 	const col = await collection(file, `${auth.currentUser.email}`)
-	// console.log('smari ' + auth.currentUser.email)
 onSnapshot(col, (snapshot)=>{
 	let texts = []
-	snapshot.docs.forEach((doc)=>{
-		texts.push({
-			...doc.data(), id: doc.id
-		})
+	 snapshot.docs.forEach((doc)=>{
+		let x = doc.id
+		if(x != 'dictionary') {
+			texts.push({
+				...doc.data(), id: doc.id
+			})
+		}
+	
 	})
-	console.log(texts)
+	// console.log(texts)
 	textField.innerHTML = ''
 	texts.forEach((elem)=>{
 		if(elem.pickedWords){
@@ -65,6 +66,7 @@ onSnapshot(col, (snapshot)=>{
 		 <div class="text" data-num = "${elem.id}"> 
 		 <div class="closetext">x</div>
 		 <div class="text-child" >${elem.text}</div>
+		 <div class="addglobal">add to Dict</div>
 		 <div class="text-words">${elem.pickedWords}</div>
 		 </div> 
 		 <br\>`
@@ -80,6 +82,7 @@ onSnapshot(col, (snapshot)=>{
 		 <div class="text" data-num = "${elem.id}"> 
 		 <div class="closetext">x</div>
 		 <div class="text-child" >${elem.text}</div>
+		 <div class="addglobal">add to Dict</div>
 		 <div class="text-words"></div>
 		 </div> 
 		 <br\>`
@@ -88,7 +91,27 @@ onSnapshot(col, (snapshot)=>{
 	})
 })
 	text.value = ''
+	async function he () {
+		let dicDoc = await doc(col, 'dictionary')
+		let gd = await (await getDoc(await doc(col,'dictionary'))).data().dictionary
+		let array = gd.split(' ')
+		const unique = array.filter((x, i) => array.indexOf(x) === i);
+				console.log('unic'+unique);
+				// unique.forEach((elem)=>{
+				// 		memory = `${memory} ${elem}`
+				// 		updateDoc(nuDoc,{dictionary: memory})
+				// 	})
+				document.querySelector('.global-dictionary').innerHTML = ''
+		unique.forEach((elem)=>
+		{
+			let bas = document.querySelector('.global-dictionary').innerHTML
+			document.querySelector('.global-dictionary').innerHTML = `${bas} ${elem} <br\>`
+		})
+		// document.querySelector('.global-dictionary').innerHTML = gd
+	}
+	he()
 	
+	// 
 	}
 
 // ============
@@ -96,10 +119,8 @@ onSnapshot(col, (snapshot)=>{
 // let i = 1
 const user = auth.currentUser;
 
-// function colorCleaner () {
-// 	const listWordsArray =textField.querySelectorAll('.word')
-// 		listWordsArray.forEach((elem)=> elem.classList.remove('picked-word'))
-// }
+
+
 
 
 document.querySelector('.popups__button1').addEventListener('click', (e)=>{
@@ -186,6 +207,8 @@ const addToCol = ()=>{
 	textMemory = text.value
 	if (textMemory !== '') {
 		if(popupText.textContent !== ''){
+			text.value = text.value.replace(/(\r\n|\n|\r)/g, '<br/> ')
+			textMemory = text.value
 			addDoc(col, {
 				text: textMemory,
 				createdAt: serverTimestamp(),
@@ -194,6 +217,8 @@ const addToCol = ()=>{
 			textMemory = ''
 		}
 		else {
+			text.value = text.value.replace(/(\r\n|\n|\r)/g, '<br/> ')
+			textMemory = text.value
 			addDoc(col, {
 				text: textMemory,
 				createdAt: serverTimestamp(),
@@ -204,14 +229,18 @@ const addToCol = ()=>{
 	}
 	else {
 		if(popupText.textContent !== ''){
+			text.value = text.value.replace(/(\r\n|\n|\r)/g, '<br/> ')
+			textMemory = text.value
 			addDoc(col, {
-				text: textTyped.textContent,
+				text: textTyped.innerHTML,
 				createdAt: serverTimestamp(),
 				pickedWords: popupText.innerHTML
 			})
 			textMemory=''
 		}
 		else {
+			text.value = text.value.replace(/(\r\n|\n|\r)/g, '<br/> ')
+			textMemory = text.value
 			addDoc(col, {
 				text: textMemory,
 				createdAt: serverTimestamp(),
@@ -278,10 +307,24 @@ let languageOnWork
 				elem.classList.remove('colored')
 			})
 			word.classList.add('colored')
-			secondLanguage = word.textContent
+			// secondLanguage = word.textContent
+			secondLanguage = word.dataset.language
+			document.querySelector('.target-language__title').textContent = word.textContent
+			target.closest('.x').classList.remove('open')
 		}
 	}
 	) 
+
+	const LangButton = document.querySelector('.chooze-language') 
+	LangButton.addEventListener('click', (e)=>{
+		const target = e.target
+		if(target.classList.contains('i')){
+			const title = target.closest('.a')
+			const list = title.querySelector('.x')
+			list.classList.toggle('open')
+		}
+		
+	})
 
 
 
@@ -295,7 +338,10 @@ let languageOnWork
 					elem.classList.remove('colored')
 				})
 				word.classList.add('colored')
-				firstLanguage = word.textContent
+				// firstLanguage = word.textContent
+				firstLanguage = word.dataset.language
+				document.querySelector('.source-language__title').textContent = word.textContent
+				target.closest('.x').classList.remove('open')
 			}
 		}
 	)
@@ -329,10 +375,12 @@ let languageOnWork
 	let numberor 
 	let count = 0
 
-	textField.addEventListener('click', (e)=>{
-		let target = e.target
+	textField.addEventListener('click', async (e)=>{
+		if(e.target.classList.contains('closetext') || e.target.classList.contains('addglobal')) {
+			let target = e.target
 		let closeText = target.closest('.closetext')
-		const colRef = collection(db, 'suka', 'lEqoJVQoRYqqio4SUPjm' , `${auth.currentUser.email}`)
+		if(auth.currentUser){
+			const colRef = collection(db, 'suka', 'lEqoJVQoRYqqio4SUPjm' , `${auth.currentUser.email}`)
 		const docRef = doc(colRef, `${target.closest('.text').dataset.num}`)
 		if(target.classList.contains('closetext') ){
 			deleteDoc(docRef)
@@ -340,7 +388,42 @@ let languageOnWork
 				console.log('document deleted')
 			})
 		}
-	})
+		}
+		else {
+			target.closest('.text').innerHTML=''
+		}
+		if (target.classList.contains('addglobal')){
+			let wordsvalue = target.closest('.text').querySelector('.text-words').textContent
+			if(auth.currentUser){
+				let memory = ''
+				const file = await doc(db, "suka", 'lEqoJVQoRYqqio4SUPjm')
+				const col = await collection(file, `${auth.currentUser.email}`)
+				const nuDoc = await doc(col,'dictionary')
+				// console.log('hueta' + await (await getDoc(await doc(col,'dictionary'))).data().dictionary)
+				await updateDoc(nuDoc, {dictionary: await (await getDoc(await doc(col,'dictionary'))).data().dictionary + wordsvalue})
+				const dataDoc = await (await getDoc(await doc(col,'dictionary'))).data().dictionary
+				// dataDoc()
+				console.log(dataDoc)
+				let array = dataDoc.split(' ')
+				const unique = array.filter((x, i) => array.indexOf(x) === i);
+				console.log(unique);
+				unique.forEach((elem)=>{
+						memory = `${memory} ${elem}`
+						updateDoc(nuDoc,{dictionary: memory})
+					})
+		
+				
+						
+					
+
+				}
+			}
+		}
+		
+		showTexts()
+		}
+
+	)
 
 
 	function nonAuthTexts() {
@@ -350,7 +433,7 @@ let languageOnWork
 		if (textTyped.textContent !== ''){
 			arr.push(textTyped.textContent)
 		}
-		else{
+		else {
 			arr.push(text.value)
 		}
 		
@@ -364,6 +447,7 @@ let languageOnWork
 					<div class="text" data-num = "${count+1}"> 
 					<div class="closetext">x</div>
 					<div class="text-child" >${textTyped.textContent}</div>
+					<div class="addglobal">add to Dict</div>
 					<div class="text-words">${popupText.innerHTML}</div>
 					</div> 
 					${numberor}
@@ -376,6 +460,7 @@ let languageOnWork
 					<div class="text" data-num = "${count+1}"> 
 					<div class="closetext">x</div>
 					<div class="text-child" >${textTyped.textContent}</div>
+					<div class="addglobal">add to Dict</div>
 					<div class="text-words"></div>
 					</div> 
 					${numberor}
@@ -389,6 +474,7 @@ let languageOnWork
 				<div class="text" data-num = "${count+1}"> 
 				<div class="closetext">x</div>
 				<div class="text-child" >${text.value}</div>
+				<div class="addglobal">add to Dict</div>
 				<div class="text-words"></div>
 				</div> 
 				${numberor}
@@ -424,13 +510,14 @@ popupText.addEventListener('click', listSingleOut)
 function replaceText() {
 	
 	
+	text.value = text.value.replace(/(\r\n|\n|\r)/g, '<br/> ')
 	let textValue = text.value
-	textTyped.textContent = textValue
+	textTyped.innerHTML = textValue
 	text.value = '';
 }
 
 function divideText() {
-	let content = document.querySelector('.texts__text').textContent
+	let content = document.querySelector('.texts__text').innerHTML
 	let textArray = content.split(' ')
 		wrappingWords (textArray,textTyped)
 }
@@ -455,8 +542,10 @@ function wrappingWords (array, textArea) {
 		let content = textTyped.querySelectorAll('.word')
 		content.forEach((elem)=>{
 			if (elem.classList.contains('colored')){
+				let array = elem.textContent.split(/['.',',']/)
 				const i = pickedWordsList.length;
-				pickedWordsList[i] = elem.textContent;
+				// pickedWordsList[i] = elem.textContent;
+				pickedWordsList[i] = array[0];
 			}
 		})
 		function showNewArray () {
